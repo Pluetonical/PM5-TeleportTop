@@ -10,6 +10,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
 use pocketmine\math\Vector3;
+use pocketmine\scheduler\ClosureTask;
 
 class Main extends PluginBase {
 
@@ -24,13 +25,7 @@ class Main extends PluginBase {
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
         if ($command->getName() === "top") {
             if ($sender instanceof Player) {
-                try {
-                    $this->teleportToTop($sender);
-                    $sender->sendMessage(TextFormat::GREEN . "Teleported to the highest block above you!");
-                } catch (\Exception $e) {
-                    $sender->sendMessage(TextFormat::RED . "An error occurred while trying to teleport you.");
-                    $this->getLogger()->error("Error teleporting player: " . $e->getMessage());
-                }
+                $this->startCountdown($sender);
                 return true;
             } else {
                 $sender->sendMessage(TextFormat::RED . "This command can only be used in-game.");
@@ -38,6 +33,26 @@ class Main extends PluginBase {
             }
         }
         return false;
+    }
+
+    private function startCountdown(Player $player): void {
+        $countdown = 5; // Countdown time in seconds
+        $taskHandler = null;
+        $taskHandler = $this->getScheduler()->scheduleRepeatingTask(new ClosureTask(function() use ($player, &$countdown, &$taskHandler): void {
+            if ($countdown > 0) {
+                $player->sendPopup(TextFormat::YELLOW . "Teleporting in " . $countdown . "...");
+                $countdown--;
+            } else {
+                try {
+                    $this->teleportToTop($player);
+                    $player->sendMessage(TextFormat::GREEN . "Teleported to the highest block above you!");
+                } catch (\Exception $e) {
+                    $player->sendMessage(TextFormat::RED . "An error occurred while trying to teleport you.");
+                    $this->getLogger()->error("Error teleporting player: " . $e->getMessage());
+                }
+                $taskHandler->cancel();
+            }
+        }), 20); // 20 ticks = 1 second
     }
 
     private function teleportToTop(Player $player): void {
