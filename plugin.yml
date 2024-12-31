@@ -1,0 +1,14 @@
+name: TopCommand
+main: Top\Main
+version: 1.0.0
+api: 5.0.0
+author: Pluetonical
+commands:
+  top:
+    description: Teleport to the highest block above you
+    usage: /top
+    permission: topcommand.use
+permissions:
+  topcommand.use:
+    description: Allows the player to use the /top command
+    default: true
